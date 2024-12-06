@@ -3,21 +3,22 @@ import { z } from "zod";
 
 // Zod schema for train query validation
 const GetTrainsSchema = z.object({
-  Qsource: z.string().min(1, "Source must be a non-empty string"),
-  Qdestination: z.string().min(1, "Destination must be a non-empty string"),
+  source: z.string().min(1, "Source must be a non-empty string"),
+  destination: z.string().min(1, "Destination must be a non-empty string"),
 });
 
 const gettrains = async (req, res) => {
   try {
     // Validate query parameters
     const validatedQuery = GetTrainsSchema.safeParse(req.query);
-    const { Qsource, Qdestination } = validatedQuery;
+    const { source, destination } = validatedQuery.data;
+    console.log(typeof destination);
 
     // Find trains matching the source and destination
     const trains = await prisma.train.findMany({
       where: {
-        source: Qsource,
-        destination: Qdestination,
+        source: { equals: source, mode: "insensitive" },
+        destination: { equals: destination, mode: "insensitive" },
       },
       select: {
         id: true,
@@ -32,15 +33,13 @@ const gettrains = async (req, res) => {
     if (trains.length === 0) {
       return res.status(404).json({
         message: "No trains found for the given source and destination",
-        source: Qsource,
-        destination: Qdestination,
+        source: source,
+        destination: destination,
       });
     }
 
     res.status(200).json({
       trains,
-      source: Qsource,
-      destination: Qdestination,
     });
   } catch (error) {
     // Handle Zod validation errors
@@ -65,11 +64,10 @@ const bookTicket = async (req, res) => {
   try {
     // Use Prisma's $transaction for atomic operations
     await prisma.$transaction(async (tx) => {
-      // Lock the train record for update
-      const train = await tx.train.findUnique({
+      // Lock the train record for update using findUniqueOrThrow()
+      const train = await tx.train.findUniqueOrThrow({
         where: { id: trainId },
         select: { id: true, availableSeats: true },
-        rejectOnNotFound: true,
       });
 
       if (train.availableSeats < seatsBooked) {
@@ -99,6 +97,7 @@ const bookTicket = async (req, res) => {
     if (error.message === "Not enough seats available") {
       return res.status(400).json({ error: error.message });
     }
+    console.log(error);
 
     res.status(500).json({ error: "An error occurred while booking" });
   }
