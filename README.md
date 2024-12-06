@@ -24,7 +24,7 @@ First clone the github repository
  - example .env
  
 ```bash
-  DATABASE_URL="postgresql://workindiapostgre_user:exWciI7vXuxuAd3U79BQbAVjxgujLKIf@dpg-ct9f459u0jms73cqkfig-a.singapore-postgres.render.com/workindiapostgre"
+  DATABASE_URL="postgresql://urpostgresqlstring"
   JWT_SECRET="anysecret"
   ADMIN_API_KEY="password"
 ```
